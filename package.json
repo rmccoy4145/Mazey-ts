@@ -1,0 +1,26 @@
+{
+  "name": "mazey",
+  "version": "1.0.0",
+  "description": "mazey game",
+  "main": "index.html",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Noirad88/Mazey.git"
+  },
+  "keywords": [
+    "game"
+  ],
+  "author": "darion mccoy",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/Noirad88/Mazey/issues"
+  },
+  "homepage": "https://github.com/Noirad88/Mazey#readme",
+  "dependencies": {
+    "express": "4.19.2",
+    "path": "0.12.7"
+  }
+}
