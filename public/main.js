@@ -1,13 +1,17 @@
 // map size has to be an even number to prevent inconsistent border
-const MAP_W = 14
-const MAP_H = 14
+const MAP_W = 24
+const MAP_H = 24
 
 // calculates when the generator should stop, when we've covered all tile positions
 const MAP_TILES_MAX = (MAP_W * MAP_H)*.25
 const MAP_TILE_SIZE = 32
 const MAP_GEN_SPEED = 20.0
+
+// tile types in reference to index in tileset
+const TILE_NONE = -1
 const TILE_FLOOR = 1
 const TILE_WALL = 0
+
 const START_POS = new Phaser.Math.Vector2(MAP_W/2,MAP_H/2)
 
 class Main extends Phaser.Scene
@@ -17,6 +21,7 @@ class Main extends Phaser.Scene
         last_open_cells = []
         current_pos = START_POS
         map_gen_timer
+        map_marker
         game_map
 
         preload ()
@@ -29,15 +34,18 @@ class Main extends Phaser.Scene
         {
             // setting up game tilemap, tileset, layer   
             this.game_map = this.make.tilemap({
-                width: MAP_W,
-                height:MAP_H,
+                width: MAP_W+2,
+                height:MAP_H+2,
                 tileWidth: MAP_TILE_SIZE,
                 tileHeight: MAP_TILE_SIZE,
             })
             const map_tileSet = this.game_map.addTilesetImage('mazey_tileset');
             const map_layer = this.game_map.createBlankLayer('map_layer_0',map_tileSet)
             this.game_map.setLayer(map_layer)
-            this.game_map.fill(TILE_FLOOR)
+
+            //marker to show current location of generator
+            this.map_marker = this.add.rectangle(0,0,MAP_TILE_SIZE,MAP_TILE_SIZE,0xff0000)
+            this.map_marker.setOrigin(0,0)
 
             //timer to control generation speed
             this.map_gen_timer = this.time.addEvent({
@@ -54,6 +62,8 @@ class Main extends Phaser.Scene
                     else{
                         console.log("GENERATION: DONE.")
                         this.map_gen_timer.paused = true
+                        this.map_marker.setVisible(false)
+                        this.DrawBorder(TILE_WALL)
                     }
     
                 }
@@ -61,14 +71,32 @@ class Main extends Phaser.Scene
 
             //generate a new maze on mouse click
             this.input.on('pointerdown', () => {
-                
-                this.game_map.fill(TILE_FLOOR)
-                this.visited_cells = []
-                this.last_open_cells = []
-                this.current_pos = START_POS
-                this.map_gen_timer.paused = false
-
+                this.RestartGenerator()
             })
+
+            this.RestartGenerator()
+
+        }
+
+        RestartGenerator(){
+            this.game_map.fill(TILE_FLOOR)
+            this.visited_cells = []
+            this.last_open_cells = []
+            this.current_pos = START_POS
+            this.map_gen_timer.paused = false
+            this.map_marker.setVisible(true)
+            this.DrawBorder(TILE_NONE)
+        }
+
+        DrawBorder(p_tile_index){
+            for (let i = 0; i <= MAP_W; i++) {
+                this.game_map.putTileAt(p_tile_index,i,0)
+                this.game_map.putTileAt(p_tile_index,i,MAP_H-1)
+            }
+            for (let i = 0; i <= MAP_H; i++) {
+                this.game_map.putTileAt(p_tile_index,0,i)
+                this.game_map.putTileAt(p_tile_index,MAP_W-1,i)
+            }
         }
 
         //checks if the generator has already visited a cell
@@ -162,6 +190,7 @@ class Main extends Phaser.Scene
             this.visited_cells.push(this.current_pos)
             this.game_map.putTileAt(TILE_WALL,final_between_pos.x,final_between_pos.y)
             this.game_map.putTileAt(TILE_WALL,this.current_pos.x,this.current_pos.y)
+            this.map_marker.setPosition(this.current_pos.x*MAP_TILE_SIZE,this.current_pos.y*MAP_TILE_SIZE)
         }
         
 
