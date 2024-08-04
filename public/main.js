@@ -64,7 +64,6 @@ class Main extends Phaser.Scene
                         this.map_gen_timer.paused = true
                         this.map_marker.setVisible(false)
                         this.DrawBorder(TILE_WALL)
-                        this.SpawnPlayer()
                     }
     
                 }
