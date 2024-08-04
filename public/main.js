@@ -64,6 +64,7 @@ class Main extends Phaser.Scene
                         this.map_gen_timer.paused = true
                         this.map_marker.setVisible(false)
                         this.DrawBorder(TILE_WALL)
+                        this.SpawnPlayer()
                     }
     
                 }
@@ -88,14 +89,19 @@ class Main extends Phaser.Scene
             this.DrawBorder(TILE_NONE)
         }
 
-        DrawBorder(p_tile_index){
+        //draws a border around the maze
+        DrawBorder(p_tile_index, p_border_inset_weight = 1){
             for (let i = 0; i <= MAP_W; i++) {
-                this.game_map.putTileAt(p_tile_index,i,0)
-                this.game_map.putTileAt(p_tile_index,i,MAP_H-1)
+                for (let j = 0; j < p_border_inset_weight; j++){
+                    this.game_map.putTileAt(p_tile_index,i,j)
+                    this.game_map.putTileAt(p_tile_index,i,MAP_H-(j+1))
+                }
             }
             for (let i = 0; i <= MAP_H; i++) {
-                this.game_map.putTileAt(p_tile_index,0,i)
-                this.game_map.putTileAt(p_tile_index,MAP_W-1,i)
+                for (let j = 0; j < p_border_inset_weight; j++){
+                    this.game_map.putTileAt(p_tile_index,j,i)
+                    this.game_map.putTileAt(p_tile_index,MAP_W-(j+1),i)
+                }
             }
         }
 
@@ -110,55 +116,37 @@ class Main extends Phaser.Scene
             return false
         }
         
+        //gets and returns valid neighbor cells from the current generator position
+        GetNeighborCells(){
+            //get all adjacent cells
+            //we only track even tiles to create the maze design
+            let move_directions = [
+                //left
+                new Phaser.Math.Vector2(this.current_pos.x-2,this.current_pos.y),
+                //right
+                new Phaser.Math.Vector2(this.current_pos.x+2,this.current_pos.y),
+                //top
+                new Phaser.Math.Vector2(this.current_pos.x,this.current_pos.y-2),
+                //bottom
+                new Phaser.Math.Vector2(this.current_pos.x,this.current_pos.y+2)
+            ]
+
+            //filter out valid cells
+            return move_directions.filter((neighbor_cell) => {
+                try{
+                    let tile_index = this.game_map.getTileAt(neighbor_cell.x,neighbor_cell.y).index
+                    if (!this.HasVisitedCell(neighbor_cell) && tile_index == TILE_FLOOR){
+                        return true
+                    }
+                } catch {}
+                return false
+            })
+        }
+
         // for each iteration while generating the map/maze
         GenerateMap()
         {
-            //get all adjacent cells
-            //we only track even tiles to create the maze design
-            let move_directions = []
-            let left_pos = new Phaser.Math.Vector2(this.current_pos.x-2,this.current_pos.y)
-            let right_pos = new Phaser.Math.Vector2(this.current_pos.x+2,this.current_pos.y)
-            let up_pos = new Phaser.Math.Vector2(this.current_pos.x,this.current_pos.y-2)
-            let down_pos = new Phaser.Math.Vector2(this.current_pos.x,this.current_pos.y+2)
-
-            //check if all adjacent cells are valid cells
-            //if so, add them
-            //otherwise, just leave them alone
-            if (!this.HasVisitedCell(left_pos)) {
-                try{
-                    let left_tile_index = this.game_map.getTileAt(left_pos.x,left_pos.y).index
-                    if (left_tile_index == TILE_FLOOR){
-                        move_directions.push(left_pos)
-                    }
-                } catch {}
-            }
-        
-            if (!this.HasVisitedCell(right_pos)) {
-                try{
-                    let right_tile_index = this.game_map.getTileAt(right_pos.x,right_pos.y).index
-                    if (right_tile_index == TILE_FLOOR){
-                        move_directions.push(right_pos)
-                    }
-                } catch {}
-            }
-        
-            if (!this.HasVisitedCell(up_pos)) {
-                try{
-                    let top_tile_index = this.game_map.getTileAt(up_pos.x,up_pos.y).index
-                    if (top_tile_index == TILE_FLOOR){
-                        move_directions.push(up_pos)
-                    }
-                } catch {}
-            }
-        
-            if (!this.HasVisitedCell(down_pos)) {
-                try{
-                    let bottom_tile_index = this.game_map.getTileAt(down_pos.x,down_pos.y).index
-                    if (bottom_tile_index == TILE_FLOOR){
-                        move_directions.push(down_pos)
-                    }
-                } catch {}
-            }
+            let move_directions = this.GetNeighborCells()
                         
             //if we have nowhere to move, go back to previous position
             if (move_directions.length == 0 && this.last_open_cells.length != 0) {
@@ -178,7 +166,7 @@ class Main extends Phaser.Scene
             } 
         }
         
-        //move the generation position and place a tile in the appropriate cells
+        //move the generation position to a valid cell, and places a tile in the appropriate cells
         MovePosition(new_pos)
         {
             let prev_pos = this.current_pos
