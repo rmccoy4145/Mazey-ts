@@ -1,12 +1,15 @@
-const express = require('express')
-const app = express()
-const port = 3000
-const path = require('path')
+import express, {Express, Request, Response} from 'express';
+import path from 'path'
+
+
+const app : Express = express()
+const port : number = 3000
 
 // register the location of the static assets
 app.use( express.static( 'public' ));
+app.use( express.static( 'dist' ));
 
-app.get( "/", ( req, res ) => {
+app.get( "/", ( req : Request, res : Response ) => {
   res.sendFile( path.join( __dirname + "/public/index.html" ));
 });
 

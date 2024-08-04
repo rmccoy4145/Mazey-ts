@@ -1,3 +1,5 @@
+import Phaser from 'phaser';
+
 // map size has to be an even number to prevent inconsistent border
 const MAP_W = 24
 const MAP_H = 24
@@ -17,12 +19,12 @@ const START_POS = new Phaser.Math.Vector2(MAP_W/2,MAP_H/2)
 class Main extends Phaser.Scene
     {
         
-        visited_cells = []
-        last_open_cells = []
-        current_pos = START_POS
-        map_gen_timer
-        map_marker
-        game_map
+        visited_cells : Phaser.Math.Vector2[] = []
+        last_open_cells : Phaser.Math.Vector2[] = []
+        current_pos : Phaser.Math.Vector2 = START_POS
+        map_gen_timer! : Phaser.Time.TimerEvent
+        map_marker! : Phaser.GameObjects.Rectangle
+        game_map! : Phaser.Tilemaps.Tilemap
 
         preload ()
         {
@@ -40,8 +42,13 @@ class Main extends Phaser.Scene
                 tileHeight: MAP_TILE_SIZE,
             })
             const map_tileSet = this.game_map.addTilesetImage('mazey_tileset');
-            const map_layer = this.game_map.createBlankLayer('map_layer_0',map_tileSet)
-            this.game_map.setLayer(map_layer)
+            const map_layer = map_tileSet ?  this.game_map.createBlankLayer('map_layer_0',map_tileSet) : null;
+
+            if (map_layer) {
+                this.game_map.setLayer(map_layer);
+            } else {
+                console.error('Failed to create map layer: map_layer_0');
+            }
 
             //marker to show current location of generator
             this.map_marker = this.add.rectangle(0,0,MAP_TILE_SIZE,MAP_TILE_SIZE,0xff0000)
@@ -89,7 +96,7 @@ class Main extends Phaser.Scene
         }
 
         //draws a border around the maze
-        DrawBorder(p_tile_index, p_border_inset_weight = 1){
+        DrawBorder(p_tile_index : number, p_border_inset_weight : number = 1){
             for (let i = 0; i <= MAP_W; i++) {
                 for (let j = 0; j < p_border_inset_weight; j++){
                     this.game_map.putTileAt(p_tile_index,i,j)
@@ -105,7 +112,7 @@ class Main extends Phaser.Scene
         }
 
         //checks if the generator has already visited a cell
-        HasVisitedCell(p_vec)
+        HasVisitedCell(p_vec : Phaser.Math.Vector2)
         {
             for (let i = 0; i < this.visited_cells.length; i++) {
                 if (p_vec.equals(this.visited_cells[i])){
@@ -133,7 +140,7 @@ class Main extends Phaser.Scene
             //filter out valid cells
             return move_directions.filter((neighbor_cell) => {
                 try{
-                    let tile_index = this.game_map.getTileAt(neighbor_cell.x,neighbor_cell.y).index
+                    let tile_index = this.game_map.getTileAt(neighbor_cell.x,neighbor_cell.y)?.index
                     if (!this.HasVisitedCell(neighbor_cell) && tile_index == TILE_FLOOR){
                         return true
                     }
@@ -166,7 +173,7 @@ class Main extends Phaser.Scene
         }
         
         //move the generation position to a valid cell, and places a tile in the appropriate cells
-        MovePosition(new_pos)
+        MovePosition(new_pos : Phaser.Math.Vector2)
         {
             let prev_pos = this.current_pos
             let between_pos = new Phaser.Math.Vector2().copy(new_pos)
